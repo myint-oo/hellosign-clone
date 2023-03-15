@@ -1,64 +1,177 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400"></a></p>
+# What is it?
+This package contains a set of code examples(bare minimum) for signing existing PDF documents. The aim is to provide features similar to Hellosign's platform. The examples cover different aspects, such as:
 
-<p align="center">
-<a href="https://travis-ci.org/laravel/framework"><img src="https://travis-ci.org/laravel/framework.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+- Identifying where to sign the document with an administrator's input.
+- Enabling users to sign documents at designated positions.
+- Adding signatures images to positions specified by users.
+- Adding footers to all pages of a PDF.
+- Combining multiple PDF documents.
+- Deleting specific pages from an existing PDF.
 
-## About Laravel
+Overall, this package provides a comprehensive solution for signing PDF documents and related functionalities.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+The examples in this package use PHP, but similar techniques can be applied to other programming languages with PDF manipulation libraries.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+# Dependencies
+- PHP (Laravel is optional but helpful for testing)
+- [propa/tcpdi](https://github.com/pauln/tcpdi): loads existing PDF files (dependent on tcpdf with full functionality)
+- tcpdf: loaded by [propa/tcpdi](https://github.com/pauln/tcpdi)
+- [spatie/pdf-to-image](https://github.com/spatie/pdf-to-image): converts PDFs to images
+- [Jquery Droppable](https://jqueryui.com/droppable)
 
-## Learning Laravel
+Overall, these dependencies provide the necessary tools to load, manipulate, and convert PDF files in a PHP environment.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+# Features
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 1500 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## Identifying where to sign the document with an administrator's input
 
-## Laravel Sponsors
+### Code
+```php
+    // load the pdf
+    $original_filename = 'filename';
+    $store_in = public_path("pdf-images/{$original_filename}.png");
+    $pdf = new \Spatie\PdfToImage\Pdf("{$original_filename}.pdf");
+    $pdf->saveImage($store_in);
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
+    return view('welcome', [
+        'file_path' => "pdf-images/{$original_filename}.png"
+    ]);
+    
+    
+    // send the pdf
+    $x = $request->x;
+    $y = $request->y;
+    session(['x' => $x > 0 ? $x : 0, 'y' => $y > 0 ? $y : 0]);
+    
+    return redirect()->to('/user');
+```
 
-### Premium Partners
+### Explaination
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[Many](https://www.many.co.uk)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[OP.GG](https://op.gg)**
-- **[WebReinvent](https://webreinvent.com/?utm_source=laravel&utm_medium=github&utm_campaign=patreon-sponsors)**
-- **[Lendio](https://lendio.com)**
+- inside ```routes/web.php``` the route ```/admin``` is meant for this purpose.
+- what we do there is we change pdf to image and sent the image to the ```welcome.blade.php```.
+- then on the image we use query to drag and drop desired position.
+- then we submit the pdf to store the position of x and y in session for later use.
 
-## Contributing
+## Enabling users to sign documents at designated positions
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### Code
 
-## Code of Conduct
+```php
+    // load for user
+    $original_filename = 'MAS Screening - bin-3';
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+    return view('welcome-user', [
+        'file_path' => "pdf-images/{$original_filename}.png",
+        'x' => session('x'),
+        'y' => session('y'),
+    ]);
+```
 
-## Security Vulnerabilities
+### What it does
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+- after admin has marked the position from ```/admin``` route
+- the x and y position is stored and session and sent it to the user menu with ```/user``` route along with the pdf file itself
+- only then in frontend we add the html **Click here to signature** html element on the provided x, y position
 
-## License
+## Adding signatures images to positions specified by users
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+### Code
+
+```php
+    $x = floatval(session('x'));
+    $y = session('y');
+    /** y axis has a margin but it's not a constant margin instead it's more like 0.2% of each position */
+    $y = floatval($y) - ($y * .2);
+
+    $pdf = new TCPDI('L', 'px', PDF_PAGE_FORMAT, true, 'UTF-8', false);
+
+    // Add a page from a PDF by file path.
+    $pdf->setPrintHeader(false);
+    $pdf->setPrintFooter(false);
+    $pdf->AddPage();
+
+    $pdf->setSourceFile('/path/to/file');
+    $idx = $pdf->importPage(1);
+    $pdf->useTemplate($idx);
+
+    $pdf->Image('myint_oo_signature_62f4c002732ec.png', $x, $y, '', '', '', '', '', false, 300);
+
+    $pdf->Output('WorksheetTest.pdf', 'I');
+```
+
+### What it does
+
+- after user has added their signature, the position won't be change because user should not normally has the ability to change the position
+- in ```routes/web.php``` route ```/sign``` we use **tcpdi** method to load the existing pdf and **tcpdf** ```Image``` method to add the signature image.
+
+## Adding footers to all pages of a PDF.
+
+### Code
+```php
+    $pdf = new TCPDIExtension('L', 'px', PDF_PAGE_FORMAT, true, 'UTF-8', false);
+    $pdf->setPrintHeader(false);
+    $pdf->setPrintFooter(true);
+    $pdf->AddPage();
+    $pdf->setSourceFile('/path/to/file');
+    $idx = $pdf->importPage(1);
+    $pdf->useTemplate($idx);
+
+    // set default monospaced font
+    $pdf->SetDefaultMonospacedFont(PDF_FONT_MONOSPACED);
+    $pdf->Output('WorksheetTest.pdf', 'I');
+```
+
+### What it does
+
+to customize the footer we need to extends the TCPDI and then overwrites ```Footer``` method.
+
+
+## Combining multiple PDF documents
+
+### Code
+
+```php
+    $pdf = new TCPDIExtension('L', 'pt', PDF_PAGE_FORMAT, true, 'UTF-8', false);
+    $pdf->setPrintHeader(false);
+    $pdf->setPrintFooter(false);
+    $pdf->AddPage();
+    $pdf->setSourceFile('/path/to/file');
+    $idx = $pdf->importPage(1);
+    $pdf->useTemplate($idx);
+
+    // set default monospaced font
+    $pdf->SetDefaultMonospacedFont(PDF_FONT_MONOSPACED);
+
+    $pdf->AddPage();
+    $pdf->setSourceFile('/path/to/another/file');
+    $idx = $pdf->importPage(1);
+    $pdf->useTemplate($idx);
+    $pdf->Output('WorksheetTest.pdf', 'I');
+```
+
+## Deleting specific pages from an existing PDF.
+
+### Code
+
+```php
+    $pdf = new TCPDIExtension('L', 'pt', PDF_PAGE_FORMAT, true, 'UTF-8', false);
+    
+    $pdf_data = file_get_contents('WorksheetTest.pdf'); // Simulate only having raw data available.
+    $page_count = $pdf->setSourceData($pdf_data);
+
+    // loads all pages from the source document
+    for ($i = 1; $i <= $page_count; $i++) {
+        $tplidx = $pdf->importPage($i);
+        $pdf->setPrintHeader(false);
+        $pdf->setPrintFooter(false);
+        $pdf->AddPage();
+        $pdf->useTemplate($tplidx);
+    }
+    
+    $last_page = $pdf->getPage();
+    $pdf->deletePage($last_page);
+
+    $pdf->Output('WorksheetTest.pdf', 'I');
+```

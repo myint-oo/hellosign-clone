@@ -71,7 +71,6 @@ Route::get('/add-footer', function(Request $request) {
 
     // set default monospaced font
     $pdf->SetDefaultMonospacedFont(PDF_FONT_MONOSPACED);
-
     $pdf->Output('WorksheetTest.pdf', 'I');
 });
 
